@@ -28,16 +28,6 @@ Object subclass: LeapHelper [
         ^true
     ]
 
-    LeapHelper class >> test [
-        "Test if the calculations are running right"
-
-        <category: 'testing'>
-        | leapYears notLeapYears |
-        leapYears := Set new add: 400; add: 800; add: 404; add: 828; yourself.
-        notLeapYears := Set new add: 100; add: 300; add: 403; add: 826; yourself.
-        leapYears do: [:y| (self checkLeapYear: y) ifFalse: [self error: 'Bad leap year']]    .
-        notLeapYears do: [:y| (self checkLeapYear: y) ifTrue: [self error: 'Bad non-leap year']]    .
-    ]
 ]
 
 
