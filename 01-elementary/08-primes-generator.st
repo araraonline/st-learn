@@ -4,7 +4,7 @@
 Object subclass: #Math.
 Math class extend [
     
-    <comment: 'I will help other objects with some Math related-stuff'>
+    <comment: 'I will help other objects with some Math-related stuff'>
 
     num: x divisibleby: y [
         "Check if x is divisible by y"
