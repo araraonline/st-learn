@@ -14,4 +14,4 @@ den := 1.0.
 ].
 
 total := 4 * total.
-total printNl  " aaand the result is close to pie"
+total printNl  "aaand the result is close to pi"
