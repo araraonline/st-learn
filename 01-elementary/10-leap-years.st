@@ -40,47 +40,17 @@ Object subclass: LeapHelper [
     ]
 ]
 
-Stream subclass: LeapYearGenerator [
-    | curYear |
-
-
-    LeapYearGenerator class >> new [
-        "Start generating year from year 1"
-
-        <category: 'instance creation'>
-        ^(self from: 1)
-    ]
-
-    LeapYearGenerator class >> from: year [
-        "Start generating leap years from given year"
-
-        <category: 'instance creation'>
-        ^(super new)
-            setYear: year;
-            yourself
-    ]
-
-    setYear: year [
-        curYear := year - 1  "the year is added one when calling #next"
-    ]
-
-    next [
-        [ true ] whileTrue: [
-            curYear := curYear + 1.
-            (LeapHelper checkLeapYear: curYear) ifTrue: [^curYear]
-        ]
-    ]
-
-    atEnd [
-        ^false
-    ]
-]
-
 
 "prepare"
 
-startYear := Date dateAndTimeNow year + 1.
-generator := LeapYearGenerator from: startYear.
+curYear := Date dateAndTimeNow year.
+generatorBlock := [:gen |
+    [ true ] whileTrue: [
+        curYear := curYear + 1.
+        (LeapHelper checkLeapYear: curYear) ifTrue: [gen yield: curYear]
+    ]
+].
+generator := Generator on: generatorBlock.
 
 
 "display"
