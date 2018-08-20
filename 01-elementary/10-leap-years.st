@@ -33,7 +33,7 @@ Object subclass: LeapHelper [
 
 "prepare"
 
-curYear := Date dateAndTimeNow year.
+curYear := Date today year.
 generatorBlock := [:gen |
     [ true ] whileTrue: [
         curYear := curYear + 1.
