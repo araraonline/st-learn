@@ -22,53 +22,41 @@ Array subclass: MyArray [
 ]
 
 Stream subclass: InterleavingStream [
-    | arr1 arr2 curArray curIndex maxIndex firstBigger |
+    | arr1 arr2 curArray curIndex maxIndex |
+
+    <comment: 'I''m a stream made up of two arrays, glued
+together in an interleaved way. When one array is bigger than
+the other, I will assume the smaller one is filled with nils,
+so that I can do my job in an easier manner.'>
 
     InterleavingStream class >> from: array1 and: array2 [
         ^(super new)
-            init;
-            setFirst: array1;
-            setSecond: array2;
-            initArrays;
+            initFrom: array1 and: array2;
             yourself
     ]
 
-    init [
+    initFrom: array1 and: array2 [
         curArray := 1.
-        curIndex := 1
-    ]
-
-    setFirst: array [
-        arr1 := MyArray from: array
-    ]
-
-    setSecond: array [
-        arr2 := MyArray from: array
-    ]
-
-    initArrays [
+        curIndex := 1.
+        arr1 := MyArray from: array1.
+        arr2 := MyArray from: array2.
         maxIndex := (arr1 size) max: (arr2 size).
-        firstBigger := (arr1 size) > (arr2 size)
     ]
 
     next [
-        | ret block |
-        block := [
-            (curArray = 1) "Retrieve value"
-                ifTrue: [ret := arr1 at: curIndex withDefault: nil]
-                ifFalse: [ret := arr2 at: curIndex withDefault: nil].
+        | ret |
+        (curArray = 1) "Retrieve value"
+            ifTrue: [ret := arr1 at: curIndex withDefault: nil]
+            ifFalse: [ret := arr2 at: curIndex withDefault: nil].
 
-            (curArray = 1)  "Update index"
-                ifTrue: [curArray := 2]
-                ifFalse: [curArray := 1. curIndex := curIndex + 1].
-        ].
-        [ret isNil] whileTrue: block.
+        (curArray = 1)  "Update index"
+            ifTrue: [curArray := 2]
+            ifFalse: [curArray := 1. curIndex := curIndex + 1].
         ^ret
     ]
 
     atEnd [
-        ^(firstBigger & (curIndex = maxIndex) & (curArray = 2)) |
-         (curIndex > maxIndex)
+         ^(curIndex > maxIndex)
     ]
 
     displayWorkings [
