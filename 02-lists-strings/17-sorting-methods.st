@@ -153,6 +153,34 @@ first).'>
         ^array
     ]
 
+    stoogeSort: array [
+        "Answer with a sorted array, based on the
+         stooge sort algorithm."
+
+        | arr |
+        arr := array copy.
+        arr size = 0 ifTrue: [^arr].
+        self stoogeSortInternal: arr from: 1 to: arr size.
+        ^arr
+    ]
+
+    stoogeSortInternal: array from: start to: end [
+        "Sort array from index1 to index2
+         using the stooge sort algorithm"
+
+        <category: 'private'>
+        | size cut |
+        size := end - start + 1.
+        cut := (2 * size / 3) ceiling.
+        (array at: start) > (array at: end) ifTrue: [array swap: start with: end].
+        (size <= 2) ifTrue: [^array].
+        self stoogeSortInternal: array from: start to: start + cut - 1.
+        self stoogeSortInternal: array from: end - cut + 1 to: end.
+        self stoogeSortInternal: array from: start to: start + cut - 1.
+        ^array
+    ]
+
+
     merge: array1 with: array2 [
         "Answer with a new array, containing elements of
          both array1 and array2 in sorted order. I assume
@@ -180,14 +208,17 @@ first).'>
          with the basic Smalltalk implementation."
 
         <category: 'testing'>
-        100 timesRepeat: [
-            | array sorted selectionSorted insertionSorted mergeSorted quickSorted |
-            array := MyArray random.
+
+        'Testing zero element array...' displayNl.
+        [
+            | array sorted selectionSorted insertionSorted mergeSorted quickSorted stoogeSorted |
+            array := MyArray from: #().
             sorted := self baseSort: array.
             selectionSorted := self selectionSort: array.
             insertionSorted := self insertionSort: array.
             mergeSorted := self mergeSort: array.
             quickSorted := self quickSort: array.
+            stoogeSorted := self stoogeSort: array.
 
             sorted ~= selectionSorted
                 ifTrue: [self error: 'selection sort didn''t work'].
@@ -197,7 +228,56 @@ first).'>
                 ifTrue: [self error: 'merge sort didn''t work'].
             sorted ~= quickSorted
                 ifTrue: [self error: 'quicksort didn''t work'].
+            sorted ~= stoogeSorted
+                ifTrue: [self error: 'stooge sort didn''t work'].
+        ] value.
+
+        'Testing one element array...' displayNl.
+        [
+            | array sorted selectionSorted insertionSorted mergeSorted quickSorted stoogeSorted |
+            array := MyArray from: #(2).
+            sorted := self baseSort: array.
+            selectionSorted := self selectionSort: array.
+            insertionSorted := self insertionSort: array.
+            mergeSorted := self mergeSort: array.
+            quickSorted := self quickSort: array.
+            stoogeSorted := self stoogeSort: array.
+
+            sorted ~= selectionSorted
+                ifTrue: [self error: 'selection sort didn''t work'].
+            sorted ~= insertionSorted
+                ifTrue: [self error: 'insertion sort didn''t work'].
+            sorted ~= mergeSorted
+                ifTrue: [self error: 'merge sort didn''t work'].
+            sorted ~= quickSorted
+                ifTrue: [self error: 'quicksort didn''t work'].
+            sorted ~= stoogeSorted
+                ifTrue: [self error: 'stooge sort didn''t work'].
+        ] value.
+
+        'Testing random arrays...' displayNl.
+        100 timesRepeat: [
+            | array sorted selectionSorted insertionSorted mergeSorted quickSorted stoogeSorted |
+            array := MyArray random.
+            sorted := self baseSort: array.
+            selectionSorted := self selectionSort: array.
+            insertionSorted := self insertionSort: array.
+            mergeSorted := self mergeSort: array.
+            quickSorted := self quickSort: array.
+            stoogeSorted := self stoogeSort: array.  "fuck me! this is slow"
+
+            sorted ~= selectionSorted
+                ifTrue: [self error: 'selection sort didn''t work'].
+            sorted ~= insertionSorted
+                ifTrue: [self error: 'insertion sort didn''t work'].
+            sorted ~= mergeSorted
+                ifTrue: [self error: 'merge sort didn''t work'].
+            sorted ~= quickSorted
+                ifTrue: [self error: 'quicksort didn''t work'].
+            sorted ~= stoogeSorted
+                ifTrue: [self error: 'stooge sort didn''t work'].
         ].
+
         'tests okay!' displayNl
     ]
 ]
