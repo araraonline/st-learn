@@ -2,7 +2,7 @@
 
 
 Array subclass: MyArray [
-    
+
     <shape: #inherit>
 
     MyArray class >> from: anotherArray [
@@ -121,6 +121,38 @@ first).'>
         ^self merge: (self mergeSort: arr1) with: (self mergeSort: arr2)
     ]
 
+    quickSort: array [
+        "Answer with a sorted array, based on the
+         quicksort algorithm."
+
+        <category: 'homework'>
+        | arr |
+        arr := array copy.
+        self quickSortInternal: arr from: 1 to: arr size.
+        ^arr
+    ]
+
+    quickSortInternal: array from: start to: end [
+        "Sort array from index1 to index2
+         using a quicksort algorithm"
+
+        <category: 'private'>
+        | pivotIndex pivotValue i |
+        start >= end ifTrue: [^array].
+        pivotIndex := end.
+        pivotValue := array at: pivotIndex.
+        i := start.
+        start to: pivotIndex - 1 do: [:pos |
+            (array at: pos) < pivotValue
+                ifTrue: [array swap: pos with: i.
+                         i := i + 1]
+        ].
+        array swap: pivotIndex with: i.
+        self quickSortInternal: array from: start to: i - 1.
+        self quickSortInternal: array from: i + 1 to: end.
+        ^array
+    ]
+
     merge: array1 with: array2 [
         "Answer with a new array, containing elements of
          both array1 and array2 in sorted order. I assume
@@ -149,12 +181,13 @@ first).'>
 
         <category: 'testing'>
         100 timesRepeat: [
-            | array sorted selectionSorted insertionSorted mergeSorted |
+            | array sorted selectionSorted insertionSorted mergeSorted quickSorted |
             array := MyArray random.
             sorted := self baseSort: array.
             selectionSorted := self selectionSort: array.
             insertionSorted := self insertionSort: array.
             mergeSorted := self mergeSort: array.
+            quickSorted := self quickSort: array.
 
             sorted ~= selectionSorted
                 ifTrue: [self error: 'selection sort didn''t work'].
@@ -162,6 +195,8 @@ first).'>
                 ifTrue: [self error: 'insertion sort didn''t work'].
             sorted ~= mergeSorted
                 ifTrue: [self error: 'merge sort didn''t work'].
+            sorted ~= quickSorted
+                ifTrue: [self error: 'quicksort didn''t work'].
         ].
         'tests okay!' displayNl
     ]
