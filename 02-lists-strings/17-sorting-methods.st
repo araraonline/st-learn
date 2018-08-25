@@ -5,6 +5,13 @@ Array subclass: MyArray [
     
     <shape: #inherit>
 
+    MyArray class >> from: anotherArray [
+        | instance |
+        instance := self new: anotherArray size.
+        anotherArray nextPutAllOn: instance writeStream.
+        ^instance
+    ]
+
     MyArray class >> random [
         "Return a random array of integers"
 
@@ -80,19 +87,43 @@ first).'>
         ^arr
     ]
 
+    insertionSort: array [
+        "Answer with a sorted array, based on the
+         insertion sort algorithm."
+
+        <category: 'homework'>
+        | arr |
+        arr := array copy.
+        2 to: arr size do: [:i |
+            | value j |
+            value := arr at: i.
+            j := i - 1.
+            [(j >= 1) and: [(arr at: j) > value]] whileTrue: [
+                arr swap: j with: j + 1.
+                j := j - 1
+            ].
+            j := j + 1.
+            arr at: j put: value
+        ].
+        ^arr
+    ]
+
     tests [
         "Compare the result of sorting algorithms
          with the basic Smalltalk implementation."
 
         <category: 'testing'>
         100 timesRepeat: [
-            | array sorted selectionSorted |
+            | array sorted selectionSorted insertionSorted |
             array := MyArray random.
             sorted := self baseSort: array.
             selectionSorted := self selectionSort: array.
+            insertionSorted := self insertionSort: array.
 
             sorted ~= selectionSorted
                 ifTrue: [self error: 'selection sort didn''t work'].
+            sorted ~= insertionSorted
+                ifTrue: [self error: 'insertion sort didn''t work'].
         ].
         'tests okay!' displayNl
     ]
