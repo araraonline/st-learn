@@ -157,6 +157,7 @@ first).'>
         "Answer with a sorted array, based on the
          stooge sort algorithm."
 
+        <category: 'homework'>
         | arr |
         arr := array copy.
         arr size = 0 ifTrue: [^arr].
