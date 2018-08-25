@@ -108,22 +108,60 @@ first).'>
         ^arr
     ]
 
+    mergeSort: array [
+        "Answer with a sorted array, based on the
+         merge sort algorithm."
+
+        <category: 'homework'>
+        | arr1 arr2 cutPoint |
+        array size <= 1 ifTrue: [^array copy].
+        cutPoint := array size + 1 // 2.
+        arr1 := array copyFrom: 1 to: cutPoint.
+        arr2 := array copyFrom: cutPoint + 1 to: array size.
+        ^self merge: (self mergeSort: arr1) with: (self mergeSort: arr2)
+    ]
+
+    merge: array1 with: array2 [
+        "Answer with a new array, containing elements of
+         both array1 and array2 in sorted order. I assume
+         that both arrays are sent in sorted"
+
+        <category: 'helper'>
+        | rs1 rs2 ws |
+        ws := WriteStream on: MyArray new.
+        rs1 := array1 readStream.
+        rs2 := array2 readStream.
+        [ rs1 atEnd | rs2 atEnd ] whileFalse: [
+            rs1 peek <= rs2 peek
+                ifTrue: [ws nextPut: rs1 next]
+                ifFalse: [ws nextPut: rs2 next]
+        ].
+
+        ws nextPutAll: rs1.
+        ws nextPutAll: rs2.
+
+        ^ws contents
+    ]
+
     tests [
         "Compare the result of sorting algorithms
          with the basic Smalltalk implementation."
 
         <category: 'testing'>
         100 timesRepeat: [
-            | array sorted selectionSorted insertionSorted |
+            | array sorted selectionSorted insertionSorted mergeSorted |
             array := MyArray random.
             sorted := self baseSort: array.
             selectionSorted := self selectionSort: array.
             insertionSorted := self insertionSort: array.
+            mergeSorted := self mergeSort: array.
 
             sorted ~= selectionSorted
                 ifTrue: [self error: 'selection sort didn''t work'].
             sorted ~= insertionSorted
                 ifTrue: [self error: 'insertion sort didn''t work'].
+            sorted ~= mergeSorted
+                ifTrue: [self error: 'merge sort didn''t work'].
         ].
         'tests okay!' displayNl
     ]
