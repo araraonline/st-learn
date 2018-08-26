@@ -39,7 +39,7 @@ frames of stars'>
     ]
 
     borderSize [
-        "Respond with the used border size"
+        "Respond with the horizontal border size"
 
         <category: 'private'>
         ^2
