@@ -1,6 +1,25 @@
 #! /usr/bin/gst -f
 
 
+String extend [
+    wordsTransformedBy: aBlock [
+        "Answer with a new string corresponding to the
+         original one, but with its words transformed by
+         aBlock. aBlock must take one argument and
+         return the transfomed word"
+
+        <category: 'utils'>
+        | result addSpace |
+        result := ''.
+        addSpace := false.
+        self substrings do: [:word |
+            addSpace ifTrue: [result := result , ' '] ifFalse: [addSpace := true].
+            result := result , (aBlock value: word)
+        ].
+        ^result
+    ]
+]
+
 Object subclass: Piggy [
 
     <comment: 'I convert messages and words from and to
@@ -11,14 +30,7 @@ piggy latin'>
          I assume no ponctuation is included in it."
 
         <category: 'message translation'>
-        | text addSpace |
-        text := ''.
-        addSpace := false.
-        message substrings do: [:word |
-            addSpace ifTrue: [text := text , ' '] ifFalse: [addSpace := true].
-            text := text , (self pigifyWord: word)
-        ].
-        ^text
+        ^message wordsTransformedBy: [:w | self pigifyWord: w]
     ]
 
     piglatinToEnglish: message [
@@ -27,14 +39,7 @@ piggy latin'>
          englishToPiglatin:"
 
         <category: 'message translation'>
-        | text addSpace |
-        text := ''.
-        addSpace := false.
-        message substrings do: [:word |
-            addSpace ifTrue: [text := text , ' '] ifFalse: [addSpace := true].
-            text := text , (self unpigifyWord: word)
-        ].
-        ^text
+        ^message wordsTransformedBy: [:w | self unpigifyWord: w]
     ]
 
     pigifyWord: word [
@@ -70,4 +75,4 @@ piggy latin'>
 
 
 (Piggy new englishToPiglatin: 'The quick brown fox') displayNl.
-(Piggy new piglatinToEnglish: 'Hetay uickqay rownbay oxfay') displayNl.
+(Piggy new piglatinToEnglish: 'Hetay uickqay rownbay oxfay') displayNl
