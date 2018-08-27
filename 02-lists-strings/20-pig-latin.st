@@ -74,5 +74,6 @@ piggy latin'>
 ]
 
 
-(Piggy new englishToPiglatin: 'The quick brown fox') displayNl.
-(Piggy new piglatinToEnglish: 'Hetay uickqay rownbay oxfay') displayNl
+piggy := Piggy new.
+(piggy englishToPiglatin: 'The quick brown fox') displayNl.
+(piggy piglatinToEnglish: 'Hetay uickqay rownbay oxfay') displayNl
