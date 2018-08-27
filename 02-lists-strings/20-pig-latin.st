@@ -21,6 +21,22 @@ piggy latin'>
         ^text
     ]
 
+    piglatinToEnglish: message [
+        "Answer with the original message that originated
+         this pig latin message. The opposite of
+         englishToPiglatin:"
+
+        <category: 'message translation'>
+        | text addSpace |
+        text := ''.
+        addSpace := false.
+        message substrings do: [:word |
+            addSpace ifTrue: [text := text , ' '] ifFalse: [addSpace := true].
+            text := text , (self unpigifyWord: word)
+        ].
+        ^text
+    ]
+
     pigifyWord: word [
         "Answer with a pig-latinized version of word"
 
@@ -36,7 +52,22 @@ piggy latin'>
         uppercase ifTrue: [result at: 1 put: (result at: 1) asUppercase]. "capitalize if it is needed"
         ^result
     ]
+
+    unpigifyWord: word [
+        "Answer with the original of a pig-latinized word"
+
+        <category: 'word translation'>
+        | uppercase result |
+        uppercase := (word at: 1) isUppercase.
+        result := ''.
+        result := result , (word at: word size - 2) asString.
+        result := result , (word copyFrom: 1 to: word size - 3).
+        uppercase ifTrue: [result at: 1 put: (result at: 1) asUppercase.
+                           result at: 2 put: (result at: 2) asLowercase].
+        ^result
+    ]
 ]
 
 
 (Piggy new englishToPiglatin: 'The quick brown fox') displayNl.
+(Piggy new piglatinToEnglish: 'Hetay uickqay rownbay oxfay') displayNl.
