@@ -43,8 +43,7 @@ won''t be'>
     ]
 
     LeapRule class >> fromFactors: factors andOperations: operations commonYear: commonYearLength [
-        "Please read setFactors and setyearOperations for
-         more info"
+        "Please read setFactors and setOperations for more info"
 
         <category: 'instance creation'>
         ^self new
