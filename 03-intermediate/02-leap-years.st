@@ -21,23 +21,23 @@ won''t be'>
          object."
 
         <category: 'homework'>
-        | operationsStream yearFactorsStream commonYearLength error errorPeriod multiplier operation |
+        | operationsStream factorsStream commonYearLength error errorPeriod multiplier operation |
         commonYearLength := yearLength rounded.
         error := yearLength asFraction - commonYearLength.  "use fraction to get rid of floating point approximations"
         errorPeriod := 1.  "error that accumulates in each year (1)"
         operationsStream := Array new writeStream.
-        yearFactorsStream := Array new writeStream.
+        factorsStream := Array new writeStream.
         [error abs > errorTolerance] whileTrue: [
             multiplier := 1 // error abs.
             error := error * multiplier.
             errorPeriod := errorPeriod * multiplier.
             operation := 1 withSignOf: error.
             operationsStream nextPut: operation.
-            yearFactorsStream nextPut: errorPeriod.
+            factorsStream nextPut: errorPeriod.
             error := error - (operation).
         ].
         ^self
-            fromFactors: yearFactorsStream contents
+            fromFactors: factorsStream contents
             andOperations: operationsStream contents
             commonYear: commonYearLength
     ]
