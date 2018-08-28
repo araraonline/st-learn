@@ -26,6 +26,8 @@ genBlock := [:gen |
 "Generate the expressions needed
  and evaluate them. If the result
  is 100, print the expression"
+'Possibilities: ' displayNl.
+Transcript nl.
 exprGenerator := Generator on: genBlock.
 exprGenerator do: [:expr |
     | value |
