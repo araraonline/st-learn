@@ -6,8 +6,8 @@ Object subclass: LeapRule [
 
     <comment: 'I represent a leap year rule
 for an arbitrary planet. My instances know
-when there will be leap years and when there
-won''t be'>
+when there will be leap years and what do
+they mean.'>
 
     errorTolerance := 0.0001.  "error tolerance for our leap year rule, in days"
 
