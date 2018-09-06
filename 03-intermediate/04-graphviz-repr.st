@@ -48,7 +48,7 @@ Object subclass: Graph [
          value of nil."
 
         <category: 'nodes'>
-        ^nodeValues
+        ^nodeValues copy
     ]
 
     addEdge: edgeString [
@@ -98,7 +98,7 @@ Object subclass: Graph [
          value of nil."
 
         <category: 'edges'>
-        ^edgeValues
+        ^edgeValues copy
     ]
 
     setNode: nodeName value: nodeValue [
