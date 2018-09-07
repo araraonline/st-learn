@@ -38,4 +38,4 @@ together.'>
 
 eg = EssayGenerator new.
 eg feedFromFile: './sample-text.txt'.
-(eg generateEssay: 250) displayNl
+eg generateEssay displayNl
