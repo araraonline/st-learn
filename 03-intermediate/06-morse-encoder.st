@@ -142,5 +142,48 @@ in the CLI'>
     ]
 ]
 
-encoder := MorseEncoder new.
+Object subclass: MorseDecoder [
+    | buffer |
+
+    <comment: 'I will decode morse code streams'>
+
+    run [
+        <category: 'main'>
+        self startRun.
+        [stdin atEnd] whileFalse: [
+            self acceptInput: stdin next.
+        ].
+        self finishRun
+    ]
+
+    startRun [
+        buffer := WriteStream on: String new
+    ]
+
+    finishRun [
+        self emptyBufferToStream
+    ]
+
+    acceptInput: input [
+        (input = Character nl) ifTrue: [self emptyBufferToStream. ^stdout nl].
+        (input = $ ) ifTrue: [^self emptyBufferToStream].
+        buffer nextPut: input
+    ]
+
+    emptyBufferToStream [
+        | decoded |
+        (buffer size = 0) ifTrue: [^self]. "buffer is empty, nothing to do"
+        decoded := self decodeCharacter: buffer contents.
+        stdout nextPut: decoded.
+        buffer emptyStream
+    ]
+
+    decodeCharacter: morseCharacter [
+        ^decodeTable
+            at: morseCharacter
+            ifAbsent: [self error: 'could not decode ' , morseCharacter]
+    ]
+]
+
+encoder := MorseDecoder new.
 encoder run
