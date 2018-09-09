@@ -82,6 +82,9 @@ morseTable at: $/ put: '-..-.'.
 
 Smalltalk at: #encodeTable put: morseTable.
 Smalltalk at: #decodeTable put: morseTable reversed.
+decodeTable at: '/' put: $ . "isolated slashes (e.g. ' / ')
+                              will be considered a word separator
+                              (space) in the incoming code"
 
 
 "Main stuff"
@@ -168,6 +171,9 @@ and #finishRun methods.'>
 TextTransformer subclass: MorseEncoder [
     | beginningOfLine waitingForWord |
 
+    <comment: 'I will encode text streams into
+Morse code'>
+
     startRun [
         "Initialize run vars"
 
@@ -235,20 +241,39 @@ TextTransformer subclass: MorseDecoder [
     <comment: 'I will decode morse code streams'>
 
     startRun [
+        "Initialize buffer"
+
+        <category: 'transformation steps'>
         buffer := WriteStream on: String new
     ]
 
     processInput: input [
+        "Process one input character
+
+        Decoding rules:
+         - New lines are kept the same
+         - Encoded spaces are kept the same
+         - Spaces in the input string represent letter separators
+         - Leading/Trailing/Spare spaces in the input string are ignored
+         - Decoded text will be in lowercase"
+
+        <category: 'transformation steps'>
         (input = Character nl) ifTrue: [self emptyBufferToStream. ^outputStream nl].
         (input = $ ) ifTrue: [^self emptyBufferToStream].
         buffer nextPut: input
     ]
 
     finishRun [
+        "Clear buffer"
+
+        <category: 'transformation steps'>
         self emptyBufferToStream
     ]
 
     emptyBufferToStream [
+        "Empty buffer and pour its contents on outputStream"
+
+        <category: 'private'>
         | decoded |
         (buffer size = 0) ifTrue: [^self]. "buffer is empty, nothing to do"
         decoded := self decodeCharacter: buffer contents.
@@ -257,6 +282,10 @@ TextTransformer subclass: MorseDecoder [
     ]
 
     decodeCharacter: morseCharacter [
+        "Decode morseCharacter (a String object) into its
+         corresponding character"
+
+        <category: 'private'>
         ^decodeTable
             at: morseCharacter
             ifAbsent: [self error: 'could not decode ' , morseCharacter]
@@ -318,10 +347,85 @@ Object subclass: Tester [
 
         'Encoder tests okay!' displayNl
     ]
+
+    testDecoder [
+        | decoder testInput testOutput |
+        decoder := MorseDecoder new.
+        (decoder transform: '.-') = 'a'
+            ifFalse: [self error: '.-'].
+        (decoder transform: ' .-') = 'a'
+            ifFalse: [self error: '+.-'].
+        (decoder transform: '.- ') = 'a'
+            ifFalse: [self error: '.-+'].
+        (decoder transform: '  .-') = 'a'
+            ifFalse: [self error: '++.-'].
+        (decoder transform: '.-  ') = 'a'
+            ifFalse: [self error: '.-++'].
+        (decoder transform: '.- .-') = 'aa'
+            ifFalse: [self error: '.-+.-'].
+        (decoder transform: '.-  .-') = 'aa'
+            ifFalse: [self error: '.-++.-'].
+        (decoder transform: '.- / .-') = 'a a'
+            ifFalse: [self error: '.-+/+.-'].
+        (decoder transform: '.- / / .-') = 'a  a'
+            ifFalse: [self error: '.-+/+/+.-'].
+        (decoder transform: '.-  /  .-') = 'a a'
+            ifFalse: [self error: '.-++/++.-'].
+        (decoder transform: '/ .-') = ' a'
+            ifFalse: [self error: '/+.-'].
+        (decoder transform: ' / .-') = ' a'
+            ifFalse: [self error: '+/+.-'].
+        (decoder transform: '  / .-') = ' a'
+            ifFalse: [self error: '++/+.-'].
+        (decoder transform: '.- /') = 'a '
+            ifFalse: [self error: '.-+/'].
+        (decoder transform: '.- /  ') = 'a '
+            ifFalse: [self error: '.-+/++'].
+        (decoder transform: '.-' , String lf) = ('a' , String lf)
+            ifFalse: [self error: '.-L'].
+        (decoder transform: '.-' , String lf, '.-') = ('a' , String lf, 'a')
+            ifFalse: [self error: '.-L.-'].
+        (decoder transform: ' .-' , String lf, '.-') = ('a' , String lf, 'a')
+            ifFalse: [self error: '+.-L.-'].
+        (decoder transform: '.-' , String lf, ' .-') = ('a' , String lf, 'a')
+            ifFalse: [self error: '.-L+.-'].
+        (decoder transform: ' .- ' , String lf, ' .- ') = ('a' , String lf, 'a')
+            ifFalse: [self error: '+.-+L+.-+'].
+        (decoder transform: '.-' , String lf, '/ .-') = ('a' , String lf, ' a')
+            ifFalse: [self error: '.-L/+.-'].
+        (decoder transform: '.-' , String lf, '/ / .-') = ('a' , String lf, '  a')
+            ifFalse: [self error: '.-L/+/+.-'].
+        (decoder transform: '.-' , String lf, '  / / .-') = ('a' , String lf, '  a')
+            ifFalse: [self error: '.-L++/+/+.-'].
+
+        testInput := '.- / --.- ..- .. -.-. -.- / -... .-. --- .-- -. / ..-. --- -..- / .--- ..- -- .--. ... / --- ...- . .-. / - .... . / .-.. .- --.. -.-- / -.. --- --.'.
+        testOutput := 'a quick brown fox jumps over the lazy dog'.
+        (decoder transform: testInput) = testOutput
+            ifFalse: [self error: testInput].
+
+        testInput := '----- .---- ..--- ...-- ....- ..... -.... --... ---.. ----. .-... .----. .--.-. -.--.- -.--. ---... --..-- -...- -.-.-- .-.-.- -....- .-.-. .-..-. ..--.. -..-.'.
+        testOutput := '0123456789&''@)(:,=!.-+"?/'.
+        (decoder transform: testInput) = testOutput
+            ifFalse: [self error: testInput].
+
+        'Decoder tests okay!' displayNl
+    ]
 ]
 
 Tester new run
-" encoder := MorseEncoder new. "
-" encoder setInputStream: stdin. "
-" encoder setOutputStream: stdout. "
-" encoder run "
+
+
+"Example usage (in this file):
+
+>> encoder := MorseEncoder new.
+>> encoder setInputStream: stdin.
+>> encoder setOutputStream: stdout.
+>> encoder run
+
+
+Then the script can be run like this (in the terminal):
+
+>> echo 'I want to encode this!' | ./06-morse-encoder.st
+.. / .-- .- -. - / - --- / . -. -.-. --- -.. . / - .... .. ... -.-.--
+
+"
