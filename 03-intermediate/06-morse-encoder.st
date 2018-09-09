@@ -14,6 +14,15 @@ Dictionary extend [
     ]
 ]
 
+String class extend [
+    lf [
+        "Returns a string containing a single lf character"
+
+        <category: 'constants'>
+        ^Character lf asString
+    ]
+]
+
 
 "Create a dictionary that links
 characters into their morse code"
@@ -70,7 +79,6 @@ morseTable at: $+ put: '.-.-.'.
 morseTable at: $" put: '.-..-.'.
 morseTable at: $? put: '..--..'.
 morseTable at: $/ put: '-..-.'.
-morseTable at: $  put: '/'. "not strictly Morse Code, but helpful"
 
 Smalltalk at: #encodeTable put: morseTable.
 Smalltalk at: #decodeTable put: morseTable reversed.
@@ -113,6 +121,20 @@ and #finishRun methods.'>
         self finishRun
     ]
 
+    transform: aString [
+        "Set up custom streams to directly get the result of
+         transforming aString with this transformer"
+
+        <category: 'running'>
+        | in out |
+        in := ReadStream on: aString.
+        out := WriteStream on: String new.
+        self setInputStream: in.
+        self setOutputStream: out.
+        self run.
+        ^out contents
+    ]
+
     startRun [
         "Message received just before the run.
          Use it to prepare for the process.
@@ -144,42 +166,57 @@ and #finishRun methods.'>
 
 
 TextTransformer subclass: MorseEncoder [
-    | lastInput currentInput |
+    | beginningOfLine waitingForWord |
 
-    processInput: input [
-        "Process one input character"
+    startRun [
+        "Initialize run vars"
 
         <category: 'transformation steps'>
-        self acceptInput: input.
-        self generateOutput
+        beginningOfLine := true.
+        waitingForWord := false "use this when you should add a space before the word"
     ]
 
-    acceptInput: input [
-        "Receive an input"
-
-        <category: 'private'>
-        lastInput := currentInput.
-        currentInput := input
-    ]
-
-    generateOutput [
-        "Generate output
+    processInput: input [
+        "Process one input character
 
          Rules:
           - Newlines are kept the same
-          - Spaces after another spaces are ignored
-          - Spaces are represented with $/
-          - Inputs with preceding characters in the
-            line will produce a preceding space in
-            the output"
+          - Leading/Trailing/Spare spaces are ignored
+          - Letters are separated by ' '
+          - Words are separated by ' / ' or a LF"
+
+        <category: 'transformation steps'>
+        (input = Character lf) ifTrue: [^self lf].
+        (input = $ ) ifTrue: [^self space].
+        ^self character: input
+    ]
+
+    lf [
+        "Add a new line to the output"
 
         <category: 'private'>
-        | newline encoded |
-        (currentInput = Character nl) ifTrue: [outputStream nl. ^self].
-        (currentInput = $ ) & (lastInput = $ ) ifTrue: [^self].
-        newline := (lastInput isNil) | (lastInput = Character nl). "am I at the beginning of a line?"
-        encoded := self encodeCharacter: currentInput.
-        newline ifTrue: [outputStream nextPutAll: encoded] ifFalse: [outputStream nextPutAll: ' ' , encoded]
+        outputStream nl.
+        beginningOfLine := true.
+    ]
+
+    space [
+        "Add a space to the output"
+
+        <category: 'private'>
+        waitingForWord := true
+    ]
+
+    character: aCharacter [
+        "Encode and add aCharacter to the output"
+
+        <category: 'private'>
+        | encoded |
+        beginningOfLine ifFalse: [waitingForWord ifTrue: [outputStream nextPutAll: ' / ']  "new word"
+                                                 ifFalse: [outputStream nextPutAll: ' ']]. "new letter of word"
+        encoded := self encodeCharacter: aCharacter.
+        outputStream nextPutAll: encoded.
+        beginningOfLine := false.
+        waitingForWord := false
     ]
 
     encodeCharacter: character [
@@ -187,7 +224,7 @@ TextTransformer subclass: MorseEncoder [
 
         <category: 'private'>
         ^encodeTable
-            at: character
+            at: character asLowercase
             ifAbsent: [self error: 'character ', character, ' not found']
     ]
 ]
@@ -226,7 +263,65 @@ TextTransformer subclass: MorseDecoder [
     ]
 ]
 
-encoder := MorseEncoder new.
-encoder setInputStream: stdin.
-encoder setOutputStream: stdout.
-encoder run
+
+"Tests"
+
+Object subclass: Tester [
+    run [
+        "Test the MorseEncoder and MorseDecoder classes"
+
+        self testEncoder.
+        self testDecoder
+    ]
+
+    testEncoder [
+        | encoder testInput testOutput |
+        encoder := MorseEncoder new.
+        (encoder transform: 'a') = '.-'
+            ifFalse: [self error: 'a'].
+        (encoder transform: 'A') = '.-'
+            ifFalse: [self error: 'A'].
+        (encoder transform: ' a') = '.-'
+            ifFalse: [self error: '+a'].
+        (encoder transform: '  a') = '.-'
+            ifFalse: [self error: '++a'].
+        (encoder transform: 'a ') = '.-'
+            ifFalse: [self error: 'a+'].
+        (encoder transform: 'a  ') = '.-'
+            ifFalse: [self error: 'a++'].
+        (encoder transform: 'aa') = '.- .-'
+            ifFalse: [self error: 'aa'].
+        (encoder transform: 'a a') = '.- / .-'
+            ifFalse: [self error: 'a+a'].
+        (encoder transform: 'a  a') = '.- / .-'
+            ifFalse: [self error: 'a++a'].
+        (encoder transform: 'a   a') = '.- / .-'
+            ifFalse: [self error: 'a+++a'].
+        (encoder transform: 'a a') = '.- / .-'
+            ifFalse: [self error: 'a+a'].
+        (encoder transform: 'a' , String lf) = ('.-' , String lf)
+            ifFalse: [self error: 'a-'].
+        (encoder transform: 'a' , String lf, 'a') = ('.-' , String lf, '.-')
+            ifFalse: [self error: 'a-a'].
+        (encoder transform: 'a' , String lf, ' a') = ('.-' , String lf, '.-')
+            ifFalse: [self error: 'a-+a'].
+
+        testInput := 'A quick brown fox jumps over the lazy dog'.
+        testOutput := '.- / --.- ..- .. -.-. -.- / -... .-. --- .-- -. / ..-. --- -..- / .--- ..- -- .--. ... / --- ...- . .-. / - .... . / .-.. .- --.. -.-- / -.. --- --.'.
+        (encoder transform: testInput) = testOutput
+            ifFalse: [self error: testInput].
+
+        testInput := '0123456789&''@)(:,=!.-+"?/'.
+        testOutput := '----- .---- ..--- ...-- ....- ..... -.... --... ---.. ----. .-... .----. .--.-. -.--.- -.--. ---... --..-- -...- -.-.-- .-.-.- -....- .-.-. .-..-. ..--.. -..-.'.
+        (encoder transform: testInput) = testOutput
+            ifFalse: [self error: testInput].
+
+        'Encoder tests okay!' displayNl
+    ]
+]
+
+Tester new run
+" encoder := MorseEncoder new. "
+" encoder setInputStream: stdin. "
+" encoder setOutputStream: stdout. "
+" encoder run "
