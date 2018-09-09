@@ -78,30 +78,80 @@ Smalltalk at: #decodeTable put: morseTable reverse.
 
 "Main stuff"
 
-Object subclass: MorseEncoder [
-    | lastInput currentInput |
+Object subclass: TextTransformer [
+    | inputStream outputStream |
 
-    <comment: 'I will convert messages to and
-from morse code. One difference from myself from the
-rest of the projects is that I will work on the standard
-streams, stdin and stdout, instead a generating a direct
-result... So, call my functions when you expect something
-in the CLI'>
+    <comment: 'I am a class that abstracts text transformation
+from one stream into the next. When I receive the message #run,
+I will run through the input stream and process it as needed,
+outputing results to outputStream.
+
+Please note that I''m an abstract class. My subclasses must implement
+a method for #processInput: and shall also implement the #startRun
+and #finishRun methods.'>
+
+    setInputStream: aStream [
+        "Set the input stream"
+
+        <category: 'initialization'>
+        inputStream := aStream
+    ]
+
+    setOutputStream: aStream [
+        "Set the output stream"
+
+        <category: 'initialization'>
+        outputStream := aStream
+    ]
 
     run [
-        "Encode an english message to morse code. The
-         incoming message must come in through the stdin
-         and the outgoing message (encoded) will go out
-         through the stdout.
+        "Take inputs from inputStream and process them"
 
-         Spaces will be reduced to one space only
-         and newlines will be kept the same"
+        <category: 'running'>
+        self startRun.
+        inputStream do: [:input | self processInput: input].
+        self finishRun
+    ]
 
-        <category: 'main'>
-        [stdin atEnd] whileFalse: [
-            self acceptInput: stdin next.
-            self generateOutput
-        ]
+    startRun [
+        "Message received just before the run.
+         Use it to prepare for the process.
+
+         By default, this is empty."
+
+        <category: 'running steps'>
+    ]
+
+    processInput: input [
+        "Message received for each input in inputStream.
+         use it to process the input in whatever manner
+         you wish"
+
+        <category: 'running steps'>
+        self subclassResponsibility
+    ]
+
+    finishRun [
+        "Message received just after the run.
+         Use it to clean the process or
+         output leftovers.
+
+         By default, this is empty."
+
+        <category: 'running steps'>
+    ]
+]
+
+
+TextTransformer subclass: MorseEncoder [
+    | lastInput currentInput |
+
+    processInput: input [
+        "Process one input character"
+
+        <category: 'transformation steps'>
+        self acceptInput: input.
+        self generateOutput
     ]
 
     acceptInput: input [
@@ -113,7 +163,7 @@ in the CLI'>
     ]
 
     generateOutput [
-        "Generate output to stdout
+        "Generate output
 
          Rules:
           - Newlines are kept the same
@@ -125,11 +175,11 @@ in the CLI'>
 
         <category: 'private'>
         | newline encoded |
-        (currentInput = Character nl) ifTrue: [stdout nl. ^self].
+        (currentInput = Character nl) ifTrue: [outputStream nl. ^self].
         (currentInput = $ ) & (lastInput = $ ) ifTrue: [^self].
         newline := (lastInput isNil) | (lastInput = Character nl). "am I at the beginning of a line?"
         encoded := self encodeCharacter: currentInput.
-        newline ifTrue: [stdout nextPutAll: encoded] ifFalse: [stdout nextPutAll: ' ' , encoded]
+        newline ifTrue: [outputStream nextPutAll: encoded] ifFalse: [outputStream nextPutAll: ' ' , encoded]
     ]
 
     encodeCharacter: character [
@@ -142,39 +192,30 @@ in the CLI'>
     ]
 ]
 
-Object subclass: MorseDecoder [
+TextTransformer subclass: MorseDecoder [
     | buffer |
 
     <comment: 'I will decode morse code streams'>
 
-    run [
-        <category: 'main'>
-        self startRun.
-        [stdin atEnd] whileFalse: [
-            self acceptInput: stdin next.
-        ].
-        self finishRun
-    ]
-
     startRun [
         buffer := WriteStream on: String new
+    ]
+
+    processInput: input [
+        (input = Character nl) ifTrue: [self emptyBufferToStream. ^outputStream nl].
+        (input = $ ) ifTrue: [^self emptyBufferToStream].
+        buffer nextPut: input
     ]
 
     finishRun [
         self emptyBufferToStream
     ]
 
-    acceptInput: input [
-        (input = Character nl) ifTrue: [self emptyBufferToStream. ^stdout nl].
-        (input = $ ) ifTrue: [^self emptyBufferToStream].
-        buffer nextPut: input
-    ]
-
     emptyBufferToStream [
         | decoded |
         (buffer size = 0) ifTrue: [^self]. "buffer is empty, nothing to do"
         decoded := self decodeCharacter: buffer contents.
-        stdout nextPut: decoded.
+        outputStream nextPut: decoded.
         buffer emptyStream
     ]
 
@@ -185,5 +226,7 @@ Object subclass: MorseDecoder [
     ]
 ]
 
-encoder := MorseDecoder new.
+encoder := MorseEncoder new.
+encoder setInputStream: stdin.
+encoder setOutputStream: stdout.
 encoder run
