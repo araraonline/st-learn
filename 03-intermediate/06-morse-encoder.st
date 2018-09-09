@@ -2,7 +2,7 @@
 
 
 Dictionary extend [
-    reverse [
+    reversed [
         "Answer with a new dictionary, whose keys are equivalent
          to my values, and whose values are equivalent to my keys"
 
@@ -73,7 +73,7 @@ morseTable at: $/ put: '-..-.'.
 morseTable at: $  put: '/'. "not strictly Morse Code, but helpful"
 
 Smalltalk at: #encodeTable put: morseTable.
-Smalltalk at: #decodeTable put: morseTable reverse.
+Smalltalk at: #decodeTable put: morseTable reversed.
 
 
 "Main stuff"
